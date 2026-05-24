@@ -29,10 +29,11 @@ const (
 	u8 CardValue = "8"
 	u9 CardValue = "9"
 
-	Skip CardValue = "SKIP"
-	Rev  CardValue = "REVERSE"
-	Pl2  CardValue = "DRAW_TWO"
-	Pl4  CardValue = "WILD_DRAW_FOUR"
+	Skip     CardValue = "SKIP"
+	Rev      CardValue = "REVERSE"
+	Pl2      CardValue = "DRAW_TWO"
+	Pl4      CardValue = "WILD_DRAW_FOUR"
+	WildCard CardValue = "WILD" // plain Wild: recolors play without forcing a draw
 )
 
 var NumberToCardvalueUnoMap = map[int]CardValue{

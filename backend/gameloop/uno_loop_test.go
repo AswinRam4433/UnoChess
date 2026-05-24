@@ -84,6 +84,65 @@ func TestDrawCardsExhausted(t *testing.T) {
 	}
 }
 
+// TestDeckComposition verifies the deck is the intended 104-card house deck:
+// numbers 1-9 (no zeros), the standard action cards, 4 Wild Draw Four, and 4 Wild.
+func TestDeckComposition(t *testing.T) {
+	deck := InitialiseFullUnoDeck()
+
+	if len(deck) != 104 {
+		t.Fatalf("expected 104 cards, got %d", len(deck))
+	}
+
+	counts := map[models.CardValue]int{}
+	for _, c := range deck {
+		counts[c.Value]++
+	}
+
+	if counts[models.CardValue("0")] != 0 {
+		t.Errorf("deck should contain no 0 cards, found %d", counts[models.CardValue("0")])
+	}
+	for n := 1; n <= 9; n++ {
+		v := models.NumberToCardvalueUnoMap[n]
+		if counts[v] != 8 { // 2 per color * 4 colors
+			t.Errorf("expected 8 of number %d, got %d", n, counts[v])
+		}
+	}
+	for _, v := range []models.CardValue{models.Skip, models.Rev, models.Pl2} {
+		if counts[v] != 8 {
+			t.Errorf("expected 8 of %s, got %d", v, counts[v])
+		}
+	}
+	if counts[models.Pl4] != 4 {
+		t.Errorf("expected 4 Wild Draw Four, got %d", counts[models.Pl4])
+	}
+	if counts[models.WildCard] != 4 {
+		t.Errorf("expected 4 plain Wild, got %d", counts[models.WildCard])
+	}
+}
+
+// TestChooseMovePrefersLowImpact verifies the bot leads with low-impact cards
+// instead of dumping draw/wild cards.
+func TestChooseMovePrefersLowImpact(t *testing.T) {
+	moves := []models.UnoCard{
+		card(models.Wild, models.Pl4),
+		card(models.Red, models.Pl2),
+		card(models.Blue, "7"), // lowest impact — should be chosen
+		card(models.Green, models.Skip),
+	}
+	if got := ChooseMove(moves); got.Value != "7" {
+		t.Errorf("expected the number card to be chosen, got %v", got)
+	}
+
+	// When only wilds are legal, the plain Wild is preferred over the +4.
+	onlyWilds := []models.UnoCard{
+		card(models.Wild, models.Pl4),
+		card(models.Wild, models.WildCard),
+	}
+	if got := ChooseMove(onlyWilds); got.Value != models.WildCard {
+		t.Errorf("expected plain Wild over Wild Draw Four, got %v", got)
+	}
+}
+
 func TestWrapSeat(t *testing.T) {
 	cases := []struct {
 		seat, n, want int

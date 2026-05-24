@@ -30,6 +30,15 @@ func InitUnoGame(playersCount int) {
 	currentPlayer := 0
 	direction := 1 // 1 for forward, -1 for reverse
 
+	// If the first flipped card is a wild it carries no color, so the first player
+	// declares the starting active color. (The discard pile keeps the original
+	// wild, so it reverts to a wild if it is ever reshuffled back into play.)
+	if topCard.Color == models.Wild {
+		chosenColor := ChooseWildColor(allPlayersHands[currentPlayer])
+		topCard.Color = chosenColor
+		fmt.Printf("🎨 First card is wild — Player %d sets the active color to %s\n", currentPlayer, chosenColor)
+	}
+
 	// stalledTurns counts consecutive turns in which a player neither played nor
 	// drew a card. Once an entire round passes with no progress (draw and discard
 	// piles both exhausted), the game is a draw. This is what prevents the
@@ -64,20 +73,50 @@ func InitUnoGame(playersCount int) {
 		steps := 1          // how many seats to advance after this turn
 		progressed := false // did a card get played or drawn this turn?
 
+		var played *models.UnoCard // the card chosen to play this turn, if any
+		fromDraw := false          // was it the card just drawn?
+
 		if len(validMoves) > 0 {
-			// Player has a valid move! For now, let's just make them play their first valid option
-			playedCard := validMoves[0]
-			fmt.Printf("Player %d plays: [%s %s]\n", turnPlayer, playedCard.Color, playedCard.Value)
+			// The bot prefers low-impact moves rather than blindly dumping wilds.
+			chosen := ChooseMove(validMoves)
+			played = &chosen
+		} else {
+			fmt.Printf("Player %d has no valid moves. Drawing a card...\n", turnPlayer)
+			if drawCards(hand, &drawPile, &discardPile, 1) > 0 {
+				progressed = true
+
+				// The freshly drawn card may be playable immediately.
+				drawn := (*hand)[len(*hand)-1]
+				if core.IsValidUnoMove(topCard, drawn) {
+					played = &drawn
+					fromDraw = true
+				}
+			}
+		}
+
+		if played != nil {
+			playedCard := *played
+			progressed = true
+			if fromDraw {
+				fmt.Printf("Player %d plays the drawn card immediately: [%s %s]\n", turnPlayer, playedCard.Color, playedCard.Value)
+			} else {
+				fmt.Printf("Player %d plays: [%s %s]\n", turnPlayer, playedCard.Color, playedCard.Value)
+			}
 
 			hand.RemoveCard(playedCard)
 			discardPile = append(discardPile, playedCard)
 			topCard = playedCard // Played card becomes the new top card
-			progressed = true
 
 			switch playedCard.Value {
 			case models.Rev:
 				direction = -direction
 				fmt.Println("🔄 Direction reversed!")
+				if playersCount == 2 {
+					// With two players a Reverse behaves like a Skip: play comes
+					// straight back to the current player.
+					steps = 2
+					fmt.Println("↩️  Two-player game — Reverse acts as a Skip.")
+				}
 			case models.Skip:
 				skipped := wrapSeat(turnPlayer+direction, playersCount)
 				steps = 2 // advance an extra seat past the skipped player
@@ -96,23 +135,11 @@ func InitUnoGame(playersCount int) {
 				chosenColor := ChooseWildColor(*hand)
 				topCard.Color = chosenColor
 				fmt.Printf("🎨 Player %d set the active color to %s\n", turnPlayer, chosenColor)
-			}
-
-		} else {
-			fmt.Printf("Player %d has no valid moves. Drawing a card...\n", turnPlayer)
-			drawn := drawCards(hand, &drawPile, &discardPile, 1)
-
-			if drawn > 0 {
-				progressed = true
-
-				// Check if the newly drawn card can be played immediately
-				newlyDrawnCard := (*hand)[len(*hand)-1]
-				if core.IsValidUnoMove(topCard, newlyDrawnCard) {
-					fmt.Printf("Player %d plays the drawn card immediately: [%s %s]\n", turnPlayer, newlyDrawnCard.Color, newlyDrawnCard.Value)
-					hand.RemoveCard(newlyDrawnCard)
-					discardPile = append(discardPile, newlyDrawnCard)
-					topCard = newlyDrawnCard
-				}
+			case models.WildCard:
+				// Plain Wild only recolors play — no one draws.
+				chosenColor := ChooseWildColor(*hand)
+				topCard.Color = chosenColor
+				fmt.Printf("🎨 Player %d set the active color to %s\n", turnPlayer, chosenColor)
 			}
 		}
 
@@ -177,7 +204,21 @@ func InitialiseFullUnoDeck() Deck {
 		startingFullUnoDeck = append(startingFullUnoDeck, models.UnoCard{Value: models.Pl4, Color: models.Wild})
 	}
 
+	for count := 0; count < 4; count++ { // ...and 4 plain Wild cards
+		startingFullUnoDeck = append(startingFullUnoDeck, models.UnoCard{Value: models.WildCard, Color: models.Wild})
+	}
+
+	// Shuffle so both the deal and the residual draw pile come out in random order.
+	startingFullUnoDeck.Shuffle()
+
 	return startingFullUnoDeck
+}
+
+// Shuffle randomizes the order of the cards in place.
+func (d Deck) Shuffle() {
+	rand.Shuffle(len(d), func(i, j int) {
+		d[i], d[j] = d[j], d[i]
+	})
 }
 
 func (startingDeck *Deck) DealStartingUnoCards(cardsCount int) Deck {
@@ -216,9 +257,7 @@ func reshuffleDiscardIntoDraw(drawPile *Deck, discardPile *Deck) bool {
 	// append copies the card values, so it is safe even though reclaimed still
 	// aliases the old discard backing array we replace on the next line.
 	*drawPile = append(*drawPile, reclaimed...)
-	rand.Shuffle(len(*drawPile), func(i, j int) {
-		(*drawPile)[i], (*drawPile)[j] = (*drawPile)[j], (*drawPile)[i]
-	})
+	drawPile.Shuffle()
 	*discardPile = Deck{top}
 	return true
 }
