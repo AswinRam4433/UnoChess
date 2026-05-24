@@ -36,3 +36,35 @@ func ChooseWildColor(hand Deck) models.CardColor {
 	}
 	return bestColor
 }
+
+// ChooseMove picks which of the player's legal moves the bot will play. It favors
+// the lowest-impact card so the bot stops blindly leading with draw/wild cards —
+// number and action cards go down before draw-twos and wilds. This keeps hands
+// shrinking and games converging on a real Uno win. Ties keep hand order.
+func ChooseMove(validMoves []models.UnoCard) models.UnoCard {
+	best := validMoves[0]
+	bestRank := moveImpact(best)
+	for _, card := range validMoves[1:] {
+		if rank := moveImpact(card); rank < bestRank {
+			best = card
+			bestRank = rank
+		}
+	}
+	return best
+}
+
+// moveImpact ranks a card by how disruptive it is to play (lower = play sooner).
+func moveImpact(card models.UnoCard) int {
+	switch card.Value {
+	case models.Pl4:
+		return 4 // forces the opponent to draw 4 — last resort
+	case models.Pl2:
+		return 3 // forces the opponent to draw 2
+	case models.WildCard:
+		return 2 // recolors play, no draw; save it when a plain card will do
+	case models.Skip, models.Rev:
+		return 1
+	default:
+		return 0 // plain number card
+	}
+}
