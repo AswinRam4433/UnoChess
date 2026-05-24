@@ -20,79 +20,124 @@ func InitUnoGame(playersCount int) {
 		return
 	}
 
-	// Take the first card from the draw pile as the top card
+	// Take the first card from the draw pile as the top card, and seed the
+	// discard pile with it so it can later be reshuffled back into the draw pile.
 	topCard := drawPile[0]
 	drawPile = drawPile[1:]
+	discardPile := Deck{topCard}
 	fmt.Printf("Game started! Initial top card: [%s %s]\n", topCard.Color, topCard.Value)
 
 	currentPlayer := 0
 	direction := 1 // 1 for forward, -1 for reverse
 
-	for {
-		fmt.Printf("\n--- Player %d's Turn ---\n", currentPlayer)
+	// stalledTurns counts consecutive turns in which a player neither played nor
+	// drew a card. Once an entire round passes with no progress (draw and discard
+	// piles both exhausted), the game is a draw. This is what prevents the
+	// infinite loop that previously occurred when nobody could move.
+	stalledTurns := 0
+
+	// maxTurns is a last-resort safety valve. Termination is already guaranteed
+	// by the stalemate guard, but this backstop ensures a future logic error can
+	// never spin the loop unbounded (and fill the disk) again.
+	const maxTurns = 100_000
+
+	for turnCount := 1; ; turnCount++ {
+		if turnCount > maxTurns {
+			fmt.Printf("\n🛑 Safety limit of %d turns reached — ending game to avoid a runaway loop.\n", maxTurns)
+			break
+		}
+
+		// turnPlayer is the player acting this turn; it stays fixed for the whole
+		// turn so messaging (and the win announcement) always names the right
+		// player even after a Skip changes who plays next.
+		turnPlayer := currentPlayer
+		fmt.Printf("\n--- Player %d's Turn ---\n", turnPlayer)
 		fmt.Printf("Top Card: [%s %s]\n", topCard.Color, topCard.Value)
 
-		hand := &allPlayersHands[currentPlayer]
+		hand := &allPlayersHands[turnPlayer]
 
 		fmt.Printf("The current hand of the player is:%s\n", hand.PrintDeck())
 
 		validMoves := core.GetValidUnoMoves(topCard, []models.UnoCard(*hand))
 		fmt.Printf("Valid moves in hand: %v\n", validMoves)
 
+		steps := 1          // how many seats to advance after this turn
+		progressed := false // did a card get played or drawn this turn?
+
 		if len(validMoves) > 0 {
 			// Player has a valid move! For now, let's just make them play their first valid option
 			playedCard := validMoves[0]
-			fmt.Printf("Player %d plays: [%s %s]\n", currentPlayer, playedCard.Color, playedCard.Value)
+			fmt.Printf("Player %d plays: [%s %s]\n", turnPlayer, playedCard.Color, playedCard.Value)
 
 			hand.RemoveCard(playedCard)
+			discardPile = append(discardPile, playedCard)
 			topCard = playedCard // Played card becomes the new top card
+			progressed = true
 
 			switch playedCard.Value {
 			case models.Rev:
 				direction = -direction
 				fmt.Println("🔄 Direction reversed!")
 			case models.Skip:
-				currentPlayer = (currentPlayer + direction + playersCount) % playersCount
-				fmt.Printf("🚫 Player %d was skipped!\n", currentPlayer)
+				skipped := wrapSeat(turnPlayer+direction, playersCount)
+				steps = 2 // advance an extra seat past the skipped player
+				fmt.Printf("🚫 Player %d was skipped!\n", skipped)
 			case models.Pl2:
-				nextPlayer := (currentPlayer + direction + playersCount) % playersCount
-				allPlayersHands[nextPlayer].DrawCard(&drawPile, 2)
+				nextPlayer := wrapSeat(turnPlayer+direction, playersCount)
+				drawCards(&allPlayersHands[nextPlayer], &drawPile, &discardPile, 2)
 				fmt.Printf("🌊 Player %d had to draw 2 cards!\n", nextPlayer)
 			case models.Pl4:
-				nextPlayer := (currentPlayer + direction + playersCount) % playersCount
-				allPlayersHands[nextPlayer].DrawCard(&drawPile, 4)
+				nextPlayer := wrapSeat(turnPlayer+direction, playersCount)
+				drawCards(&allPlayersHands[nextPlayer], &drawPile, &discardPile, 4)
 				fmt.Printf("🔥 Player %d had to draw 4 cards!\n", nextPlayer)
 
 				// A wild card carries no color of its own, so the player must
 				// declare a new active color for matching to continue.
 				chosenColor := ChooseWildColor(*hand)
 				topCard.Color = chosenColor
-				fmt.Printf("🎨 Player %d set the active color to %s\n", currentPlayer, chosenColor)
+				fmt.Printf("🎨 Player %d set the active color to %s\n", turnPlayer, chosenColor)
 			}
 
 		} else {
-			fmt.Printf("Player %d has no valid moves. Drawing a card...\n", currentPlayer)
-			hand.DrawCard(&drawPile, 1)
+			fmt.Printf("Player %d has no valid moves. Drawing a card...\n", turnPlayer)
+			drawn := drawCards(hand, &drawPile, &discardPile, 1)
 
-			// Check if the newly drawn card can be played immediately
-			newlyDrawnCard := (*hand)[len(*hand)-1]
-			if core.IsValidUnoMove(topCard, newlyDrawnCard) {
-				fmt.Printf("Player %d plays the drawn card immediately: [%s %s]\n", currentPlayer, newlyDrawnCard.Color, newlyDrawnCard.Value)
-				topCard = newlyDrawnCard
-				hand.RemoveCard(newlyDrawnCard)
+			if drawn > 0 {
+				progressed = true
+
+				// Check if the newly drawn card can be played immediately
+				newlyDrawnCard := (*hand)[len(*hand)-1]
+				if core.IsValidUnoMove(topCard, newlyDrawnCard) {
+					fmt.Printf("Player %d plays the drawn card immediately: [%s %s]\n", turnPlayer, newlyDrawnCard.Color, newlyDrawnCard.Value)
+					hand.RemoveCard(newlyDrawnCard)
+					discardPile = append(discardPile, newlyDrawnCard)
+					topCard = newlyDrawnCard
+				}
 			}
 		}
 
 		// Check Win Condition / Uno shoutouts
 		if hand.CheckGameWon() {
-			fmt.Printf("\n🏆 Player %d won the game!\n", currentPlayer)
+			fmt.Printf("\n🏆 Player %d won the game!\n", turnPlayer)
 			break
 		} else if hand.ShouldShoutUno() {
-			fmt.Printf("\n📣 Player %d shouts: UNO!!\n", currentPlayer)
+			fmt.Printf("\n📣 Player %d shouts: UNO!!\n", turnPlayer)
 		}
 
-		// Move to the next player smoothly handling reverse step patterns
-		currentPlayer = (currentPlayer + direction + playersCount) % playersCount
+		// Stalemate detection: if a full round elapses with no card played or
+		// drawn, no progress is possible (both piles are exhausted) — call it a draw.
+		if progressed {
+			stalledTurns = 0
+		} else {
+			stalledTurns++
+			if stalledTurns >= playersCount {
+				fmt.Println("\n🤝 No player can move and the deck is exhausted — the game is a draw.")
+				break
+			}
+		}
+
+		// Move to the next player, honoring direction and any skip.
+		currentPlayer = wrapSeat(turnPlayer+steps*direction, playersCount)
 	}
 }
 
@@ -155,18 +200,60 @@ func (startingDeck *Deck) DealStartingUnoCards(cardsCount int) Deck {
 	return playerHand
 }
 
-// DrawCard safely takes N cards from the draw pile and pushes them into the hand
-func (d *Deck) DrawCard(drawPile *Deck, count int) {
+// reshuffleDiscardIntoDraw moves every discard except the current top card back
+// into the draw pile and shuffles it, letting play continue once the draw pile
+// runs dry. It returns false when there is nothing left to reclaim (fewer than
+// two cards in the discard pile).
+func reshuffleDiscardIntoDraw(drawPile *Deck, discardPile *Deck) bool {
+	if len(*discardPile) < 2 {
+		return false
+	}
+
+	last := len(*discardPile) - 1
+	top := (*discardPile)[last]
+	reclaimed := (*discardPile)[:last]
+
+	// append copies the card values, so it is safe even though reclaimed still
+	// aliases the old discard backing array we replace on the next line.
+	*drawPile = append(*drawPile, reclaimed...)
+	rand.Shuffle(len(*drawPile), func(i, j int) {
+		(*drawPile)[i], (*drawPile)[j] = (*drawPile)[j], (*drawPile)[i]
+	})
+	*discardPile = Deck{top}
+	return true
+}
+
+// drawCards pulls up to count cards from the draw pile into hand, reshuffling the
+// discard pile back in when the draw pile empties. It returns how many cards were
+// actually drawn, which is fewer than count only when every pile is exhausted.
+func drawCards(hand *Deck, drawPile *Deck, discardPile *Deck, count int) int {
+	drawn := 0
 	for i := 0; i < count; i++ {
 		if len(*drawPile) == 0 {
-			fmt.Println("⚠️ Draw pile is empty!") // In a production game, you'd reshuffle the discard pile here
-			return
+			if !reshuffleDiscardIntoDraw(drawPile, discardPile) {
+				fmt.Println("⚠️ Draw and discard piles are both exhausted — no card drawn.")
+				return drawn
+			}
+			fmt.Println("♻️  Draw pile empty — reshuffled the discard pile back in.")
 		}
+
 		// Pull card off top of drawPile, append to player deck
 		card := (*drawPile)[0]
 		*drawPile = (*drawPile)[1:]
-		*d = append(*d, card)
+		*hand = append(*hand, card)
+		drawn++
 	}
+	return drawn
+}
+
+// wrapSeat reduces a seat index into [0, playersCount), handling the negative
+// values that arise when play is running in reverse.
+func wrapSeat(seat, playersCount int) int {
+	seat %= playersCount
+	if seat < 0 {
+		seat += playersCount
+	}
+	return seat
 }
 
 // RemoveCard searches a hand for a specific card and purges it
