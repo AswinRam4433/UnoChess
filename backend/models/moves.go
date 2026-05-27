@@ -39,9 +39,9 @@ type UnoChessGame struct {
 	History []TurnRecord
 
 	// Hands & Deck
-	Hands       map[chess.Color][]UnoCard
-	DrawPile    []UnoCard
-	DiscardPile []UnoCard
+	Hands       map[chess.Color]Deck
+	DrawPile    Deck
+	DiscardPile Deck
 
 	// Custom Turn Management State
 	ActiveColor   chess.Color
