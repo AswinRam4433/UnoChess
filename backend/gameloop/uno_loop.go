@@ -3,13 +3,13 @@ package gameloop
 
 import (
 	"fmt"
-	"math/rand/v2"
 	"unochess/core" // Imported to use your validators
 	"unochess/models"
 )
 
-// Deck is used universally for draw piles, discard piles, and player hands.
-type Deck []models.UnoCard
+// Deck aliases models.Deck so existing gameloop code keeps the short name. The type
+// and its data methods now live in models; gameloop layers only strategy on top.
+type Deck = models.Deck
 
 func InitUnoGame(playersCount int) {
 	drawPile := InitialiseFullUnoDeck()
@@ -214,33 +214,6 @@ func InitialiseFullUnoDeck() Deck {
 	return startingFullUnoDeck
 }
 
-// Shuffle randomizes the order of the cards in place.
-func (d Deck) Shuffle() {
-	rand.Shuffle(len(d), func(i, j int) {
-		d[i], d[j] = d[j], d[i]
-	})
-}
-
-func (startingDeck *Deck) DealStartingUnoCards(cardsCount int) Deck {
-	playerHand := make(Deck, cardsCount)
-
-	for i := 0; i < cardsCount; i++ {
-		if len(*startingDeck) == 0 {
-			break
-		}
-
-		randomIndex := rand.IntN(len(*startingDeck))
-		pickedItem := (*startingDeck)[randomIndex]
-		playerHand[i] = pickedItem
-
-		lastIndex := len(*startingDeck) - 1
-		(*startingDeck)[randomIndex] = (*startingDeck)[lastIndex]
-		*startingDeck = (*startingDeck)[:lastIndex]
-	}
-
-	return playerHand
-}
-
 // reshuffleDiscardIntoDraw moves every discard except the current top card back
 // into the draw pile and shuffles it, letting play continue once the draw pile
 // runs dry. It returns false when there is nothing left to reclaim (fewer than
@@ -295,22 +268,6 @@ func wrapSeat(seat, playersCount int) int {
 	return seat
 }
 
-// RemoveCard searches a hand for a specific card and purges it
-func (d *Deck) RemoveCard(target models.UnoCard) {
-	for i, card := range *d {
-		if card.Value == target.Value && card.Color == target.Color {
-			// Efficient Order-destructive swap and trim
-			(*d)[i] = (*d)[len(*d)-1]
-			*d = (*d)[:len(*d)-1]
-			return
-		}
-	}
-}
-
-func (d Deck) CheckGameWon() bool {
-	return len(d) == 0
-}
-
-func (d Deck) ShouldShoutUno() bool {
-	return len(d) == 1
-}
+// wrapSeat and the deck helpers above are the only turn-flow utilities that remain in
+// gameloop; the Deck data methods (Shuffle, deal, RemoveCard, win predicates, Print)
+// now live in package models.

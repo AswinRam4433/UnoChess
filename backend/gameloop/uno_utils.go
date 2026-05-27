@@ -1,19 +1,8 @@
 package gameloop
 
 import (
-	"fmt"
-	"strings"
 	"unochess/models"
 )
-
-func (d *Deck) PrintDeck() string {
-	var sb strings.Builder
-	for k, v := range *d {
-		sb.WriteString(fmt.Sprintf("\nCard %d:\tColor:%s and Value:%s", k+1, v.Color, v.Value))
-	}
-
-	return sb.String()
-}
 
 // ChooseWildColor picks the active color to declare after playing a wild card.
 // It favors whichever real color the player holds most of, so follow-up plays

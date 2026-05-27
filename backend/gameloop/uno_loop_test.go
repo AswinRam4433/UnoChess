@@ -149,9 +149,9 @@ func TestWrapSeat(t *testing.T) {
 	}{
 		{0, 2, 0},
 		{2, 2, 0},
-		{-1, 2, 1},  // reverse from seat 0 in a 2-player game
-		{-2, 4, 2},  // two seats back, wrapping around
-		{5, 4, 1},   // skip past the end
+		{-1, 2, 1}, // reverse from seat 0 in a 2-player game
+		{-2, 4, 2}, // two seats back, wrapping around
+		{5, 4, 1},  // skip past the end
 	}
 	for _, c := range cases {
 		if got := wrapSeat(c.seat, c.n); got != c.want {
