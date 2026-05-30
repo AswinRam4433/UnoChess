@@ -48,14 +48,17 @@ var NumberToCardvalueUnoMap = map[int]CardValue{
 	9: u9,
 }
 
-// var CardvalueToNumberUnoMap = map[CardValue]int{
-// 	u1: 1,
-// 	u2: 2,
-// 	u3: 3,
-// 	u4: 4,
-// 	u5: 5,
-// 	u6: 6,
-// 	u7: 7,
-// 	u8: 8,
-// 	u9: 9,
-// }
+// CardValueToNumberUnoMap is the inverse of NumberToCardvalueUnoMap: it translates a
+// number card back into the chess-move count it grants under the number-card combo
+// rule, and lets callers detect whether a given card is a number card at all.
+var CardValueToNumberUnoMap = map[CardValue]int{
+	u1: 1,
+	u2: 2,
+	u3: 3,
+	u4: 4,
+	u5: 5,
+	u6: 6,
+	u7: 7,
+	u8: 8,
+	u9: 9,
+}

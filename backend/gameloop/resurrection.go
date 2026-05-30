@@ -161,6 +161,7 @@ func PlayResurrection(g *models.UnoChessGame, card models.UnoCard, placements []
 		CardPlayed:  card,
 		BoardStates: []string{newFEN},
 	})
+	g.Phase = models.PhaseTurnComplete
 	return nil
 }
 
