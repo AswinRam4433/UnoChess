@@ -36,5 +36,7 @@ func NewUnoChessGame() *models.UnoChessGame {
 		ActiveColor:   chess.White,
 		PlayDirection: 1,
 		Captured:      map[chess.Color][]chess.PieceType{},
+		Phase:         models.PhaseAwaitingCard,
+		Winner:        chess.NoColor,
 	}
 }

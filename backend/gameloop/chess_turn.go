@@ -79,6 +79,7 @@ func PlaySubMove(g *models.UnoChessGame, uci string) (SubMoveOutcome, error) {
 		// The player has no legal continuation (stalemate/checkmate against them);
 		// the combo ends here with no move played.
 		commitCombo(g, combo)
+		g.Phase = models.PhaseTurnComplete
 		return SubMoveOutcome{ComboDone: true, FEN: combo.WorkingFEN}, nil
 	}
 
@@ -100,10 +101,17 @@ func PlaySubMove(g *models.UnoChessGame, uci string) (SubMoveOutcome, error) {
 	}
 
 	// A game-ending move (checkmate intercept) or the owed moves running out both
-	// finish the combo.
+	// finish the combo. The checkmate intercept jumps straight to PhaseGameOver and
+	// records the winner; running out cleanly just hands the turn off to AdvanceTurn.
 	if res.Outcome != chess.NoOutcome || combo.MovesRemaining == 0 {
 		commitCombo(g, combo)
 		out.ComboDone = true
+		if res.Outcome != chess.NoOutcome {
+			g.Phase = models.PhaseGameOver
+			g.Winner = winnerFromOutcome(res.Outcome)
+		} else {
+			g.Phase = models.PhaseTurnComplete
+		}
 	}
 	return out, nil
 }

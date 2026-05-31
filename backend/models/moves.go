@@ -5,6 +5,27 @@ import (
 	chess "github.com/notnil/chess"
 )
 
+// TurnPhase tracks where the active player is within their turn, so a staggered,
+// request-driven flow (one HTTP/WebSocket message at a time) can resume between calls
+// without each handler having to re-derive what is expected next.
+type TurnPhase int
+
+const (
+	// PhaseAwaitingCard: the active player must play a card or draw.
+	PhaseAwaitingCard TurnPhase = iota
+	// PhaseInCombo: a number card was played and the player owes one or more chess
+	// sub-moves.
+	PhaseInCombo
+	// PhaseAwaitingResurrection: a +2 / +4 was played and the player must place the
+	// resurrected pieces.
+	PhaseAwaitingResurrection
+	// PhaseTurnComplete: all of the active player's actions are done; AdvanceTurn
+	// passes play to the opponent.
+	PhaseTurnComplete
+	// PhaseGameOver: the game has been won (Winner set) or drawn.
+	PhaseGameOver
+)
+
 // TurnRecord represents the entire action a player took on their turn.
 type TurnRecord struct {
 	Player     chess.Color
@@ -55,4 +76,17 @@ type UnoChessGame struct {
 	// back via a +2 / +4 resurrection (rulebook §3B/§3C). Kings never enter this pool:
 	// a captured king ends the game, and a king can never be resurrected.
 	Captured map[chess.Color][]chess.PieceType
+
+	// Phase is where the active player is within their turn — the state-machine
+	// marker that lets a staggered, request-driven flow resume between handler calls.
+	Phase TurnPhase
+
+	// Winner is set when Phase == PhaseGameOver; chess.NoColor while the game is in
+	// progress, and also on a draw.
+	Winner chess.Color
+
+	// PendingSkip records that a Skip or Reverse was played this turn. AdvanceTurn
+	// honors it by keeping the same player active (in a two-player game both cards
+	// collapse to "play returns to you") and clears the flag.
+	PendingSkip bool
 }
