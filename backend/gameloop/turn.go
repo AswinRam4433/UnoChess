@@ -20,6 +20,8 @@ var (
 	ErrInvalidWildColor = errors.New("a wild card requires a real declared color")
 	ErrHasPlayableCard  = errors.New("the active player must play a card when one is available")
 	ErrTurnNotComplete  = errors.New("the turn is not yet complete")
+	ErrNotStartOfGame   = errors.New("starting color can only be declared before the first turn")
+	ErrNoWildToDeclare  = errors.New("the discard top is not a wild card")
 )
 
 // PlayCardResult reports what happened when the active player played a card so the
@@ -187,6 +189,29 @@ func AdvanceTurn(g *models.UnoChessGame) error {
 		g.ActiveColor = g.ActiveColor.Other()
 	}
 	g.Phase = models.PhaseAwaitingCard
+	return nil
+}
+
+// DeclareStartingColor resolves a wild opening discard by setting its color before
+// turn 1. It is valid only at game start (no turns played yet) and only when the
+// discard top is actually a wild card; otherwise the active color is already
+// unambiguous and this handler must reject the call. The driver (RunGame) calls it
+// automatically at setup using ChooseWildColor against White's hand; a transport
+// layer would call it with the human first-player's choice at the same point.
+func DeclareStartingColor(g *models.UnoChessGame, color models.CardColor) error {
+	if g.Phase != models.PhaseAwaitingCard {
+		return fmt.Errorf("%w: phase=%d", ErrNotAwaitingCard, g.Phase)
+	}
+	if len(g.History) != 0 {
+		return ErrNotStartOfGame
+	}
+	if topOfDiscard(g).Color != models.Wild {
+		return ErrNoWildToDeclare
+	}
+	if !isRealColor(color) {
+		return fmt.Errorf("%w: got %q", ErrInvalidWildColor, color)
+	}
+	g.DiscardPile[len(g.DiscardPile)-1].Color = color
 	return nil
 }
 

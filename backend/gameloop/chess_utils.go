@@ -20,6 +20,29 @@ func FirstLegalMove(moves []*chess.Move) *chess.Move {
 	return moves[0]
 }
 
+// PreferCapturesAndChecks is the bot driver's chess chooser: it picks the first
+// capturing move, then the first checking move, and finally falls back to the first
+// legal move. It is intentionally minimal — enough to keep bot games varied and out
+// of the trivial rook-shuffle pattern that FirstLegalMove produces, without
+// committing to a real engine. Pluggable via gameloop.RunOptions for tests that
+// want stricter determinism.
+func PreferCapturesAndChecks(moves []*chess.Move) *chess.Move {
+	if len(moves) == 0 {
+		return nil
+	}
+	for _, m := range moves {
+		if m.HasTag(chess.Capture) {
+			return m
+		}
+	}
+	for _, m := range moves {
+		if m.HasTag(chess.Check) {
+			return m
+		}
+	}
+	return moves[0]
+}
+
 // MoveByUCI returns a chooser that plays the legal move matching the given UCI
 // string (e.g. "b1a3", "e7e8q"), or declines (returns nil) when no legal move
 // matches. It is the human-facing counterpart to FirstLegalMove: the move a player
