@@ -1,37 +1,27 @@
 package main
 
-import "unochess/gameloop"
+import (
+	"fmt"
+	"math/rand/v2"
+	"time"
 
+	"unochess/gameloop"
+)
+
+// main runs a single bot-driven UnoChess game and prints the result. The seed is
+// taken from the wall clock so each run is fresh; the seed is printed up-front so a
+// specific run can be reproduced by hard-coding it.
 func main() {
-	gameloop.InitUnoGame(2)
-	// game := chess.NewGame()
-	// // generate moves until game is over
-	// for game.Outcome() == chess.NoOutcome {
-	// 	// select a random move
-	// 	moves := game.ValidMoves()
-	// 	move := moves[rand.Intn(len(moves))]
-	// 	game.Move(move)
-	// }
-	// // print outcome and game PGN
-	// fmt.Println(game.Position().Board().Draw())
-	// fmt.Printf("Game completed. %s by %s.\n", game.Outcome(), game.Method())
-	// fmt.Println(game.String())
-	// /*
-	// 	Output:
+	seed := uint64(time.Now().UnixNano())
+	fmt.Printf("seed=%d\n", seed)
 
-	// 	 A B C D E F G H
-	// 	8- - - - - - - -
-	// 	7- - - - - - ♚ -
-	// 	6- - - - ♗ - - -
-	// 	5- - - - - - - -
-	// 	4- - - - - - - -
-	// 	3♔ - - - - - - -
-	// 	2- - - - - - - -
-	// 	1- - - - - - - -
+	rng := rand.New(rand.NewPCG(seed, seed^0x9E3779B97F4A7C15))
+	g := gameloop.NewUnoChessGameWith(rng)
 
-	// 	Game completed. 1/2-1/2 by InsufficientMaterial.
-
-	// 	1.Nc3 b6 2.a4 e6 3.d4 Bb7 ...
-	// */
-
+	res, err := gameloop.RunGame(g, gameloop.RunOptions{})
+	if err != nil {
+		fmt.Printf("Game errored: %v\n", err)
+		return
+	}
+	fmt.Printf("Game over after %d turns: %s (winner: %v)\n", res.Turns, res.Reason, res.Winner)
 }
