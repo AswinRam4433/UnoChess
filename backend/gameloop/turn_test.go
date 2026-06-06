@@ -569,3 +569,57 @@ func TestPhase2_ResurrectionFlowCompletesTurn(t *testing.T) {
 		t.Errorf("expected White queen on e3")
 	}
 }
+
+// --- DeclareStartingColor (AC-3) ------------------------------------------
+
+func TestDeclareStartingColor_RecolorsWildTop(t *testing.T) {
+	g := newTurnTestGame(t,
+		card(models.Wild, models.Pl4),
+		models.Deck{card(models.Red, "5")},
+		models.Deck{card(models.Blue, "9")},
+	)
+
+	if err := DeclareStartingColor(g, models.Red); err != nil {
+		t.Fatalf("DeclareStartingColor: %v", err)
+	}
+	if topOfDiscard(g).Color != models.Red {
+		t.Errorf("top color = %v, want Red", topOfDiscard(g).Color)
+	}
+}
+
+func TestDeclareStartingColor_RejectsAfterFirstTurn(t *testing.T) {
+	g := newTurnTestGame(t,
+		card(models.Wild, models.Pl4),
+		models.Deck{card(models.Red, "5")},
+		models.Deck{card(models.Blue, "9")},
+	)
+	g.History = append(g.History, models.TurnRecord{Player: chess.White})
+
+	if err := DeclareStartingColor(g, models.Red); !errors.Is(err, ErrNotStartOfGame) {
+		t.Fatalf("expected ErrNotStartOfGame, got %v", err)
+	}
+}
+
+func TestDeclareStartingColor_RejectsNonWildTop(t *testing.T) {
+	g := newTurnTestGame(t,
+		card(models.Red, "5"),
+		models.Deck{card(models.Red, "9")},
+		models.Deck{card(models.Blue, "9")},
+	)
+
+	if err := DeclareStartingColor(g, models.Blue); !errors.Is(err, ErrNoWildToDeclare) {
+		t.Fatalf("expected ErrNoWildToDeclare, got %v", err)
+	}
+}
+
+func TestDeclareStartingColor_RejectsInvalidColor(t *testing.T) {
+	g := newTurnTestGame(t,
+		card(models.Wild, models.Pl4),
+		models.Deck{card(models.Red, "5")},
+		models.Deck{card(models.Blue, "9")},
+	)
+
+	if err := DeclareStartingColor(g, models.Wild); !errors.Is(err, ErrInvalidWildColor) {
+		t.Fatalf("expected ErrInvalidWildColor, got %v", err)
+	}
+}

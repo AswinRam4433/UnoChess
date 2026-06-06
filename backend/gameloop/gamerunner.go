@@ -18,6 +18,10 @@ const (
 	UnoWin       GameWinningReason = "Uno"
 	CheckmateWin GameWinningReason = "Checkmate"
 	Draw         GameWinningReason = "Draw"
+	// TurnCapHit signals that the game ran past RunOptions.TurnCap without anyone
+	// winning. Winner is chess.NoColor; treat it as a draw — but the distinct label
+	// lets callers tell a genuine no-progress draw apart from a safety-valve trip.
+	TurnCapHit GameWinningReason = "TurnCap"
 )
 
 // GameResult describes the terminal state of a finished game.
@@ -34,12 +38,13 @@ type RunOptions struct {
 	ChessMoveChooser ChessMoveChooser
 
 	// TurnCap is the safety limit on the number of turns played. Hitting it ends the
-	// game with Reason=Draw. Zero means use defaultTurnCap.
+	// game with Reason=TurnCapHit. Zero means use defaultTurnCap (10,000).
 	TurnCap int
 
-	// RandomSourcer is the slot AC-5 will wire into deck shuffling/dealing to make
-	// games byte-for-byte reproducible from a seed. Currently unused by RunGame —
-	// the slot exists so the surface area is stable for that follow-up ticket.
+	// RandomSourcer is reserved for future bot-level randomness (e.g. a stochastic
+	// chess chooser). Currently unused: determinism flows in via NewUnoChessGameWith
+	// at construction, since the deck shuffle/deal are the only random ops and they
+	// happen before RunGame is called.
 	RandomSourcer rand.Source
 }
 
@@ -71,7 +76,7 @@ func RunGame(g *models.UnoChessGame, opts RunOptions) (GameResult, error) {
 		turnCap = defaultTurnCap
 	}
 
-	// AC-3: a wild opening discard has no color — resolve it before turn 1 so all
+	// A wild opening discard has no color — resolve it before turn 1 so all
 	// matching downstream is unambiguous.
 	if topOfDiscard(g).Color == models.Wild {
 		chosen := ChooseWildColor(g.Hands[g.ActiveColor])
@@ -87,7 +92,7 @@ func RunGame(g *models.UnoChessGame, opts RunOptions) (GameResult, error) {
 		if turn > turnCap {
 			g.Phase = models.PhaseGameOver
 			g.Winner = chess.NoColor
-			return GameResult{Winner: chess.NoColor, Reason: Draw, Turns: turn - 1}, nil
+			return GameResult{Winner: chess.NoColor, Reason: TurnCapHit, Turns: turn - 1}, nil
 		}
 		progressed, err := runOneTurn(g, chooser)
 		if err != nil {
