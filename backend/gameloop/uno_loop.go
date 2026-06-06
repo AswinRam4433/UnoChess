@@ -3,6 +3,8 @@ package gameloop
 
 import (
 	"fmt"
+	"math/rand/v2"
+
 	"unochess/core" // Imported to use your validators
 	"unochess/models"
 )
@@ -179,8 +181,26 @@ func DealAllPlayerHands(playersCount int, drawPile *Deck) []Deck {
 	return allPlayerHands
 }
 
+// InitialiseFullUnoDeck builds and shuffles the 104-card house deck using the
+// package-level RNG. See initialiseFullUnoDeckWith for the seeded variant.
 func InitialiseFullUnoDeck() Deck {
-	startingFullUnoDeck := make(Deck, 0, 100)
+	deck := buildFullUnoDeck()
+	deck.Shuffle()
+	return deck
+}
+
+// initialiseFullUnoDeckWith builds the 104-card house deck and shuffles it with the
+// caller's RNG, so a seeded source produces a deterministic ordering.
+func initialiseFullUnoDeckWith(r *rand.Rand) Deck {
+	deck := buildFullUnoDeck()
+	deck.ShuffleWith(r)
+	return deck
+}
+
+// buildFullUnoDeck composes the 104-card house deck (no zeros, 4 Wild Draw 4s, 4
+// plain Wilds) in a deterministic order. Callers shuffle it themselves.
+func buildFullUnoDeck() Deck {
+	startingFullUnoDeck := make(Deck, 0, 104)
 
 	colors := []models.CardColor{models.Red, models.Green, models.Blue, models.Yellow}
 	for _, clr := range colors {
@@ -207,9 +227,6 @@ func InitialiseFullUnoDeck() Deck {
 	for count := 0; count < 4; count++ { // ...and 4 plain Wild cards
 		startingFullUnoDeck = append(startingFullUnoDeck, models.UnoCard{Value: models.WildCard, Color: models.Wild})
 	}
-
-	// Shuffle so both the deal and the residual draw pile come out in random order.
-	startingFullUnoDeck.Shuffle()
 
 	return startingFullUnoDeck
 }
