@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"math/rand/v2"
 
-	"unochess/core" // Imported to use your validators
+	"unochess/core"
 	"unochess/models"
 )
 

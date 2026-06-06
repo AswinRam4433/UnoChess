@@ -1,6 +1,7 @@
 package gameloop
 
 import (
+	"fmt"
 	"math/rand/v2"
 	"reflect"
 	"testing"
@@ -91,6 +92,122 @@ func TestRunGame_Deterministic(t *testing.T) {
 	}
 	if !reflect.DeepEqual(g1.Hands, g2.Hands) {
 		t.Error("final Hands diverged across runs")
+	}
+}
+
+// TestPhase3_BotGameInvariants drives several seeded games to completion
+// This is the test that locks the rules engine into CI —
+// any regression that violates card conservation, phase coherence, or History
+// integrity surfaces here.
+func TestPhase3_BotGameInvariants(t *testing.T) {
+	seeds := []struct{ a, b uint64 }{
+		{42, 7},
+		{99, 1234},
+		{1, 1},
+		{31415, 27182},
+	}
+	for _, s := range seeds {
+		s := s
+		t.Run(fmt.Sprintf("seed_%d_%d", s.a, s.b), func(t *testing.T) {
+			g := NewUnoChessGameWith(pcgRand(s.a, s.b))
+			opts := RunOptions{
+				// Tight cap so a runaway test fails fast rather than spinning to
+				// the 10k default. Real games end well under this.
+				TurnCap: 3000,
+				OnTurnEnd: func(g *models.UnoChessGame, turn int) {
+					assertPerTurnInvariants(t, g, turn)
+				},
+			}
+			res, err := RunGame(g, opts)
+			if err != nil {
+				t.Fatalf("RunGame: %v", err)
+			}
+			assertTerminalInvariants(t, g, res)
+		})
+	}
+}
+
+// assertPerTurnInvariants checks the invariants that must hold at every turn
+// boundary (the OnTurnEnd hook fires after AdvanceTurn or game-end).
+func assertPerTurnInvariants(t *testing.T, g *models.UnoChessGame, turn int) {
+	t.Helper()
+
+	// Card conservation: the 104-card house deck stays whole at all times.
+	const fullDeck = 104
+	total := len(g.Hands[chess.White]) + len(g.Hands[chess.Black]) + len(g.DrawPile) + len(g.DiscardPile)
+	if total != fullDeck {
+		t.Errorf("turn %d: card conservation broken — %d on table, want %d", turn, total, fullDeck)
+	}
+
+	// Phase is always one of the enum values.
+	switch g.Phase {
+	case models.PhaseAwaitingCard, models.PhaseInCombo, models.PhaseAwaitingResurrection, models.PhaseTurnComplete, models.PhaseGameOver:
+		// OK
+	default:
+		t.Errorf("turn %d: invalid Phase: %v", turn, g.Phase)
+	}
+
+	// At a turn boundary, Phase is either ready for the next player or game over —
+	// never mid-turn states.
+	if g.Phase != models.PhaseAwaitingCard && g.Phase != models.PhaseGameOver {
+		t.Errorf("turn %d: Phase at boundary = %v, want PhaseAwaitingCard or PhaseGameOver", turn, g.Phase)
+	}
+
+	// Pending must be nil at a turn boundary — the combo state only lives across
+	// PlaySubMove calls within a single turn.
+	if g.Pending != nil {
+		t.Errorf("turn %d: Pending should be nil at boundary, got %+v", turn, g.Pending)
+	}
+
+	// ActiveColor is always a real color.
+	if g.ActiveColor != chess.White && g.ActiveColor != chess.Black {
+		t.Errorf("turn %d: ActiveColor = %v, want White or Black", turn, g.ActiveColor)
+	}
+
+	// Every FEN ever recorded in History must parse cleanly.
+	for i, rec := range g.History {
+		for j, fen := range rec.BoardStates {
+			if _, err := chess.FEN(fen); err != nil {
+				t.Errorf("turn %d: History[%d].BoardStates[%d] invalid FEN %q: %v", turn, i, j, fen, err)
+			}
+		}
+	}
+}
+
+// assertTerminalInvariants checks the invariants that must hold once
+// PhaseGameOver is reached.
+func assertTerminalInvariants(t *testing.T, g *models.UnoChessGame, res GameResult) {
+	t.Helper()
+
+	if g.Phase != models.PhaseGameOver {
+		t.Fatalf("expected PhaseGameOver, got %v", g.Phase)
+	}
+	if res.Winner != g.Winner {
+		t.Errorf("GameResult.Winner=%v but game.Winner=%v", res.Winner, g.Winner)
+	}
+
+	switch res.Reason {
+	case UnoWin:
+		if res.Winner != chess.White && res.Winner != chess.Black {
+			t.Errorf("UnoWin: Winner = %v, want White or Black", res.Winner)
+		}
+		if got := len(g.Hands[res.Winner]); got != 0 {
+			t.Errorf("UnoWin: winner's hand has %d cards, want 0", got)
+		}
+	case CheckmateWin:
+		if res.Winner != chess.White && res.Winner != chess.Black {
+			t.Errorf("CheckmateWin: Winner = %v, want White or Black", res.Winner)
+		}
+		oc := g.ChessEngine.Outcome()
+		if oc != chess.WhiteWon && oc != chess.BlackWon {
+			t.Errorf("CheckmateWin: chess engine outcome = %v, want a chess victory", oc)
+		}
+	case Draw, TurnCapHit:
+		if res.Winner != chess.NoColor {
+			t.Errorf("%v: Winner = %v, want NoColor", res.Reason, res.Winner)
+		}
+	default:
+		t.Errorf("unknown Reason: %v", res.Reason)
 	}
 }
 

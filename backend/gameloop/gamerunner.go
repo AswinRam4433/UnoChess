@@ -46,6 +46,13 @@ type RunOptions struct {
 	// at construction, since the deck shuffle/deal are the only random ops and they
 	// happen before RunGame is called.
 	RandomSourcer rand.Source
+
+	// OnTurnEnd, when non-nil, is invoked after every turn that actually executed
+	// (including the final, game-ending one) with the game state and the 1-based
+	// turn index. It is the seam the integration test uses to assert per-turn
+	// invariants without polluting the main loop with assertion logic. The hook is
+	// not called on the turn-cap exit path, since that turn never executed.
+	OnTurnEnd func(g *models.UnoChessGame, turn int)
 }
 
 const defaultTurnCap = 10_000
@@ -97,6 +104,9 @@ func RunGame(g *models.UnoChessGame, opts RunOptions) (GameResult, error) {
 		progressed, err := runOneTurn(g, chooser)
 		if err != nil {
 			return GameResult{}, fmt.Errorf("turn %d: %w", turn, err)
+		}
+		if opts.OnTurnEnd != nil {
+			opts.OnTurnEnd(g, turn)
 		}
 		if progressed {
 			stalled = 0
