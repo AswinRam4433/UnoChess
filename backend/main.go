@@ -1,17 +1,43 @@
 package main
 
 import (
+	"flag"
 	"fmt"
+	"log"
 	"math/rand/v2"
+	"net/http"
 	"time"
 
 	"unochess/gameloop"
+	"unochess/transport"
 )
 
-// main runs a single bot-driven UnoChess game and prints the result. The seed is
-// taken from the wall clock so each run is fresh; the seed is printed up-front so a
-// specific run can be reproduced by hard-coding it.
 func main() {
+	port := flag.String("port", "8080", "HTTP port for server mode")
+	mode := flag.String("mode", "server", "server | bot")
+	flag.Parse()
+
+	switch *mode {
+	case "server":
+		runServer(*port)
+	case "bot":
+		runBot()
+	default:
+		log.Fatalf("unknown mode %q — use server or bot", *mode)
+	}
+}
+
+func runServer(port string) {
+	reg := transport.NewRegistry()
+	srv := transport.NewServer(reg)
+	addr := ":" + port
+	log.Printf("UnoChess server listening on %s", addr)
+	if err := http.ListenAndServe(addr, srv); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func runBot() {
 	seed := uint64(time.Now().UnixNano())
 	fmt.Printf("seed=%d\n", seed)
 

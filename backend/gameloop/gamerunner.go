@@ -283,6 +283,20 @@ func legalMovesForCombo(combo *models.ActiveCombo) []*chess.Move {
 	return chess.NewGame(cfg).ValidMoves()
 }
 
+// RunBotTurn drives exactly one complete turn for the active player using chooser
+// for chess sub-moves. It is the transport layer's entry point for server-side
+// bot opponents. The progressed bool mirrors runOneTurn's semantics: false means
+// neither a card was played nor drawn (both piles exhausted).
+func RunBotTurn(g *models.UnoChessGame, chooser ChessMoveChooser) (bool, error) {
+	return runOneTurn(g, chooser)
+}
+
+// ClassifyEnd reports why a PhaseGameOver state was reached. Exported so the
+// transport layer can format game-over messages without re-running the game loop.
+func ClassifyEnd(g *models.UnoChessGame) GameWinningReason {
+	return classifyEnd(g)
+}
+
 // classifyEnd reports why a PhaseGameOver state was reached. The chess engine is
 // authoritative for chess-track wins; everything else (with a Winner set) is a Uno
 // victory; otherwise the game was drawn.
