@@ -75,6 +75,14 @@ func ApplyChessSubMove(startFEN string, color chess.Color, isFirst bool, choose 
 	if move == nil {
 		return ChessSubMoveResult{Status: SubMoveDeclined, FEN: startFEN, Outcome: chess.NoOutcome}, nil
 	}
+	// King capture is the UnoChess winning condition. During a multi-move combo,
+	// forceColorClearEnPassant keeps the same player's turn active after delivering
+	// check, so the engine includes "capture the king" in ValidMoves. Detect it
+	// before engine.Move so we always declare the correct outcome regardless of
+	// what outcome the engine reports for a king-less position.
+	targetPiece := engine.Position().Board().Piece(move.S2())
+	kingCaptured := targetPiece != chess.NoPiece && targetPiece.Type() == chess.King
+
 	if err := engine.Move(move); err != nil {
 		return ChessSubMoveResult{}, fmt.Errorf("move %s: %w", move.String(), err)
 	}
@@ -82,11 +90,29 @@ func ApplyChessSubMove(startFEN string, color chess.Color, isFirst bool, choose 
 	// engine.Outcome() reports chess.NoOutcome ("*") for a game still in progress —
 	// always carry it through, since the zero value of chess.Outcome is "" and would
 	// be misread by callers as "the game ended".
+	outcome := engine.Outcome()
+
+	if kingCaptured {
+		// King capture wins immediately regardless of moves remaining.
+		if color == chess.White {
+			outcome = chess.WhiteWon
+		} else {
+			outcome = chess.BlackWon
+		}
+		return ChessSubMoveResult{
+			Status:  SubMovePlayed,
+			Move:    move,
+			FEN:     engine.Position().String(),
+			Outcome: outcome,
+			Method:  chess.Checkmate,
+		}, nil
+	}
+
 	return ChessSubMoveResult{
 		Status:  SubMovePlayed,
 		Move:    move,
 		FEN:     engine.Position().String(),
-		Outcome: engine.Outcome(),
+		Outcome: outcome,
 		Method:  engine.Method(),
 	}, nil
 }

@@ -101,7 +101,7 @@ func RunGame(g *models.UnoChessGame, opts RunOptions) (GameResult, error) {
 			g.Winner = chess.NoColor
 			return GameResult{Winner: chess.NoColor, Reason: TurnCapHit, Turns: turn - 1}, nil
 		}
-		progressed, err := runOneTurn(g, chooser)
+		progressed, err := runOneTurn(g, chooser, nil)
 		if err != nil {
 			return GameResult{}, fmt.Errorf("turn %d: %w", turn, err)
 		}
@@ -131,8 +131,10 @@ func RunGame(g *models.UnoChessGame, opts RunOptions) (GameResult, error) {
 
 // runOneTurn plays exactly one turn for the active player and returns whether the
 // player made any progress (played or drew a card) so the outer loop can detect a
-// dead-round draw.
-func runOneTurn(g *models.UnoChessGame, chooser ChessMoveChooser) (bool, error) {
+// dead-round draw. afterSubMove, when non-nil, is forwarded to runCombo and called
+// after each chess sub-move (used by the transport layer to broadcast intermediate
+// bot board states).
+func runOneTurn(g *models.UnoChessGame, chooser ChessMoveChooser, afterSubMove func()) (bool, error) {
 	active := g.ActiveColor
 	top := topOfDiscard(g)
 	hand := g.Hands[active]
@@ -174,7 +176,7 @@ func runOneTurn(g *models.UnoChessGame, chooser ChessMoveChooser) (bool, error) 
 
 		switch g.Phase {
 		case models.PhaseInCombo:
-			if err := runCombo(g, chooser); err != nil {
+			if err := runCombo(g, chooser, afterSubMove); err != nil {
 				return progressed, err
 			}
 		case models.PhaseAwaitingResurrection:
@@ -194,7 +196,11 @@ func runOneTurn(g *models.UnoChessGame, chooser ChessMoveChooser) (bool, error) 
 // the legal set PlaySubMove will accept. The loop exits when PlaySubMove flips Phase
 // out of PhaseInCombo (either via completion, a stalemate against the active color,
 // or the checkmate intercept).
-func runCombo(g *models.UnoChessGame, chooser ChessMoveChooser) error {
+//
+// afterSubMove, when non-nil, is called after each successful PlaySubMove. The
+// transport layer uses this to broadcast intermediate board states during the bot's
+// combo so the human player can see each move as it happens.
+func runCombo(g *models.UnoChessGame, chooser ChessMoveChooser, afterSubMove func()) error {
 	for g.Phase == models.PhaseInCombo {
 		moves := legalMovesForCombo(g.Pending)
 		if len(moves) == 0 {
@@ -211,6 +217,9 @@ func runCombo(g *models.UnoChessGame, chooser ChessMoveChooser) error {
 		}
 		if _, err := PlaySubMove(g, move.String()); err != nil {
 			return fmt.Errorf("sub-move %s: %w", move.String(), err)
+		}
+		if afterSubMove != nil {
+			afterSubMove()
 		}
 	}
 	return nil
@@ -287,8 +296,15 @@ func legalMovesForCombo(combo *models.ActiveCombo) []*chess.Move {
 // for chess sub-moves. It is the transport layer's entry point for server-side
 // bot opponents. The progressed bool mirrors runOneTurn's semantics: false means
 // neither a card was played nor drawn (both piles exhausted).
-func RunBotTurn(g *models.UnoChessGame, chooser ChessMoveChooser) (bool, error) {
-	return runOneTurn(g, chooser)
+//
+// The optional afterSubMove callback is invoked after each chess sub-move so the
+// transport layer can broadcast intermediate board states between bot moves.
+func RunBotTurn(g *models.UnoChessGame, chooser ChessMoveChooser, afterSubMove ...func()) (bool, error) {
+	var cb func()
+	if len(afterSubMove) > 0 {
+		cb = afterSubMove[0]
+	}
+	return runOneTurn(g, chooser, cb)
 }
 
 // ClassifyEnd reports why a PhaseGameOver state was reached. Exported so the

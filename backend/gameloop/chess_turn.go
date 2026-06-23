@@ -100,9 +100,11 @@ func PlaySubMove(g *models.UnoChessGame, uci string) (SubMoveOutcome, error) {
 		GameMethod:  res.Method,
 	}
 
-	// A game-ending move (checkmate intercept) or the owed moves running out both
-	// finish the combo. The checkmate intercept jumps straight to PhaseGameOver and
-	// records the winner; running out cleanly just hands the turn off to AdvanceTurn.
+	// Two conditions end the combo:
+	//   1. A sub-move ends the game (checkmate, stalemate, or king capture) → PhaseGameOver.
+	//   2. Owed moves run out → PhaseTurnComplete.
+	// Delivering check does NOT end the combo; the opponent responds on their own
+	// turn. King capture is detected in ApplyChessSubMove and sets Outcome accordingly.
 	if res.Outcome != chess.NoOutcome || combo.MovesRemaining == 0 {
 		commitCombo(g, combo)
 		out.ComboDone = true
