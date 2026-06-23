@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { api } from '../lib/api';
 import ShareDialog from '../components/overlays/ShareDialog';
+import ThemeToggle from '../components/ThemeToggle';
 
 export default function LobbyScreen({ onGameReady }) {
   const [opponent, setOpponent]       = useState('human');
@@ -76,6 +77,9 @@ export default function LobbyScreen({ onGameReady }) {
           <img src="/logo.svg" alt="" style={styles.navLogo} />
           <span style={{ ...styles.navTitle, fontFamily: 'Cinzel, serif' }}>UN♟CHESS</span>
         </div>
+        <div style={{ marginLeft: 'auto' }}>
+          <ThemeToggle />
+        </div>
       </header>
 
       <main style={styles.main}>
@@ -112,7 +116,7 @@ export default function LobbyScreen({ onGameReady }) {
               onClick={handleCreate}
               disabled={creating}
               whileTap={{ scale: 0.97 }}
-              whileHover={{ background: '#8e7ef9' }}
+              whileHover={{ filter: 'brightness(1.08)' }}
             >
               {creating ? 'Creating…' : 'Create Game'}
             </motion.button>
@@ -140,7 +144,7 @@ export default function LobbyScreen({ onGameReady }) {
               onClick={() => handleJoin()}
               disabled={joining || !joinID.trim()}
               whileTap={{ scale: 0.97 }}
-              whileHover={{ background: '#8e7ef9' }}
+              whileHover={{ filter: 'brightness(1.08)' }}
             >
               {joining ? 'Joining…' : 'Join →'}
             </motion.button>
@@ -216,11 +220,12 @@ const styles = {
     overflow: 'auto',
   },
   nav: {
-    height: 52,
+    height: 56,
+    background: 'var(--bar)',
     borderBottom: '1px solid var(--border)',
     display: 'flex',
     alignItems: 'center',
-    padding: '0 24px',
+    padding: '0 20px',
     flexShrink: 0,
   },
   navBrand: {
@@ -292,16 +297,17 @@ const styles = {
     fontSize: 14,
   },
   btn: {
-    background: 'var(--active)',
-    color: '#fff',
+    background: 'var(--accent)',
+    color: 'var(--accent-ink)',
     border: 'none',
-    borderRadius: 8,
-    padding: '10px 0',
+    borderRadius: 10,
+    padding: '12px 0',
     fontSize: 14,
-    fontWeight: 600,
+    fontWeight: 700,
     width: '100%',
-    transition: 'background 0.15s',
+    transition: 'filter 0.15s',
     cursor: 'pointer',
+    minHeight: 44,
   },
   input: {
     background: 'var(--bg)',

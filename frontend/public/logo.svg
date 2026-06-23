@@ -1,35 +1,35 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 100" fill="none">
-  <!-- Card body -->
-  <rect x="4" y="4" width="72" height="92" rx="10" fill="#16161f" stroke="#2a2a3f" stroke-width="2"/>
-  <!-- Diagonal color split (Uno colors) -->
+  
+  <rect x="4" y="4" width="72" height="92" rx="10" fill="#16161f" stroke="#2a2a3f" stroke-width="2"></rect>
+  
   <clipPath id="card-clip">
-    <rect x="4" y="4" width="72" height="92" rx="10"/>
+    <rect x="4" y="4" width="72" height="92" rx="10"></rect>
   </clipPath>
   <g clip-path="url(#card-clip)">
-    <polygon points="4,4 40,4 4,54" fill="#c0392b" opacity="0.85"/>
-    <polygon points="40,4 76,4 76,54" fill="#2471a3" opacity="0.85"/>
-    <polygon points="4,54 4,96 40,96" fill="#1e8449" opacity="0.85"/>
-    <polygon points="40,96 76,96 76,54" fill="#d4ac0d" opacity="0.85"/>
-    <!-- Dark overlay to keep card readable -->
-    <rect x="4" y="4" width="72" height="92" fill="#0d0d14" opacity="0.45"/>
+    <polygon points="4,4 40,4 4,54" fill="#c0392b" opacity="0.85"></polygon>
+    <polygon points="40,4 76,4 76,54" fill="#2471a3" opacity="0.85"></polygon>
+    <polygon points="4,54 4,96 40,96" fill="#1e8449" opacity="0.85"></polygon>
+    <polygon points="40,96 76,96 76,54" fill="#d4ac0d" opacity="0.85"></polygon>
+    
+    <rect x="4" y="4" width="72" height="92" fill="#0d0d14" opacity="0.45"></rect>
   </g>
-  <!-- Knight silhouette (simplified) -->
+  
   <g clip-path="url(#card-clip)" fill="#e8e8f0" opacity="0.95">
-    <!-- Body -->
-    <ellipse cx="40" cy="62" rx="14" ry="10"/>
-    <!-- Neck -->
-    <rect x="34" y="45" width="10" height="20" rx="4"/>
-    <!-- Head -->
-    <ellipse cx="42" cy="40" rx="11" ry="9"/>
-    <!-- Snout -->
-    <ellipse cx="51" cy="44" rx="6" ry="4"/>
-    <!-- Ear 1 -->
-    <ellipse cx="36" cy="32" rx="3" ry="6" transform="rotate(-15 36 32)"/>
-    <!-- Ear 2 -->
-    <ellipse cx="43" cy="30" rx="2.5" ry="5" transform="rotate(10 43 30)"/>
-    <!-- Eye -->
-    <circle cx="46" cy="38" r="2" fill="#0d0d14"/>
-    <!-- Base -->
-    <rect x="26" y="70" width="28" height="6" rx="3"/>
+    
+    <ellipse cx="40" cy="62" rx="14" ry="10"></ellipse>
+    
+    <rect x="34" y="45" width="10" height="20" rx="4"></rect>
+    
+    <ellipse cx="42" cy="40" rx="11" ry="9"></ellipse>
+    
+    <ellipse cx="51" cy="44" rx="6" ry="4"></ellipse>
+    
+    <ellipse cx="36" cy="32" rx="3" ry="6" transform="rotate(-15 36 32)"></ellipse>
+    
+    <ellipse cx="43" cy="30" rx="2.5" ry="5" transform="rotate(10 43 30)"></ellipse>
+    
+    <circle cx="46" cy="38" r="2" fill="#0d0d14"></circle>
+    
+    <rect x="26" y="70" width="28" height="6" rx="3"></rect>
   </g>
 </svg>

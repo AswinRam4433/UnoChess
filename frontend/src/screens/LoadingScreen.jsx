@@ -119,12 +119,12 @@ const styles = {
   letterUno: {
     fontSize: 40,
     fontWeight: 700,
-    color: '#e8e8f0',
+    color: 'var(--text)',
   },
   letterChess: {
     fontSize: 22,
     fontWeight: 400,
-    color: '#7c6af7',
+    color: 'var(--accent)',
     letterSpacing: 6,
   },
   barTrack: {

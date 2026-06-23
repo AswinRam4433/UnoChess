@@ -1,11 +1,22 @@
 import { motion } from 'framer-motion';
 
+// Card body colour (the printed face)
 const BG = {
-  RED:    '#c0392b',
-  BLUE:   '#2471a3',
-  GREEN:  '#1e8449',
-  YELLOW: '#d4ac0d',
+  RED:    'var(--uno-red)',
+  BLUE:   'var(--uno-blue)',
+  GREEN:  'var(--uno-green)',
+  YELLOW: 'var(--uno-yellow)',
   WILD:   null,
+};
+
+// Number/symbol colour printed on the cream oval. Yellow needs a darker
+// ink than its body, or it's illegible on cream.
+const INK = {
+  RED:    'var(--uno-red)',
+  BLUE:   'var(--uno-blue)',
+  GREEN:  'var(--uno-green)',
+  YELLOW: 'var(--uno-yellow-ink)',
+  WILD:   '#3a3942',
 };
 
 const LABEL = {
@@ -16,79 +27,87 @@ const LABEL = {
   Wild:    '★',
 };
 
+// w/h define the card stock; everything else scales off w.
+const SIZES = {
+  sm: { w: 46,  h: 68  },
+  md: { w: 62,  h: 92  },
+  lg: { w: 104, h: 152 },
+  xl: { w: 120, h: 176 },
+};
+
+export function cardDims(size = 'md') { return SIZES[size] ?? SIZES.md; }
+
 export default function UnoCard({ card, selected, playable, onClick, size = 'md' }) {
   const isWild = card.color === 'WILD';
   const label  = LABEL[card.value] ?? card.value;
-  const dim    = size === 'sm' ? { w: 46, h: 68, fs: 13 }
-               : size === 'lg' ? { w: 80, h: 116, fs: 22 }
-               :                 { w: 60, h: 88, fs: 17 };
+  const { w, h } = cardDims(size);
+  const fs     = Math.round(w * 0.46);
+  const corner = Math.max(8, Math.round(w * 0.16));
 
-  const bg = isWild
-    ? 'linear-gradient(135deg, #c0392b 0%, #2471a3 33%, #1e8449 66%, #d4ac0d 100%)'
-    : BG[card.color];
+  const bg  = isWild ? 'var(--wild-grad)' : BG[card.color];
+  const ink = INK[card.color];
 
   return (
     <motion.div
       role="button"
       tabIndex={playable ? 0 : -1}
       style={{
-        width: dim.w,
-        height: dim.h,
-        borderRadius: 8,
+        width: w,
+        height: h,
+        borderRadius: Math.round(w * 0.13),
         background: bg,
-        border: selected
-          ? '2.5px solid #fff'
-          : '2px solid rgba(255,255,255,0.12)',
+        border: `${Math.max(2, Math.round(w * 0.045))}px solid var(--card-cream)`,
         display: 'flex',
-        flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
         cursor: playable ? 'pointer' : 'default',
-        opacity: playable ? 1 : 0.38,
+        opacity: playable ? 1 : 0.4,
         userSelect: 'none',
         flexShrink: 0,
-        boxShadow: selected
-          ? '0 0 0 3px var(--active-glow), 0 4px 16px rgba(0,0,0,0.5)'
-          : '0 2px 8px rgba(0,0,0,0.4)',
         position: 'relative',
         overflow: 'hidden',
+        boxShadow: selected
+          ? '0 0 0 3px var(--accent-glow), 0 12px 28px rgba(0,0,0,0.5)'
+          : '0 3px 12px rgba(0,0,0,0.4)',
       }}
-      animate={{
-        y: selected ? -20 : 0,
-        scale: selected ? 1.05 : 1,
-      }}
-      whileHover={playable ? { y: selected ? -20 : -12, scale: 1.03 } : {}}
+      animate={{ y: selected ? -20 : 0, scale: selected ? 1.05 : 1 }}
+      whileHover={playable ? { y: selected ? -20 : -12, scale: 1.04 } : {}}
       transition={{ type: 'spring', stiffness: 400, damping: 28 }}
       onClick={playable ? onClick : undefined}
     >
-      {/* Inner oval */}
+      {/* gloss */}
       <div style={{
-        width: '72%',
-        height: '82%',
-        borderRadius: '50%',
-        border: '2px solid rgba(255,255,255,0.25)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
+        position: 'absolute', inset: 0, borderRadius: 'inherit', pointerEvents: 'none',
+        background: 'linear-gradient(180deg, rgba(255,255,255,0.24), transparent 46%)',
+      }} />
+
+      {/* tilted cream oval */}
+      <div style={{
+        width: '82%', height: '66%', borderRadius: '50%',
+        background: 'var(--card-cream)', transform: 'rotate(-22deg)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.12)',
       }}>
         <span style={{
-          fontSize: dim.fs,
-          fontWeight: 700,
-          color: '#fff',
-          fontFamily: 'Cinzel, serif',
-          textShadow: '0 1px 4px rgba(0,0,0,0.5)',
-          lineHeight: 1,
+          transform: 'rotate(22deg)',
+          fontFamily: 'Manrope, sans-serif', fontWeight: 800,
+          fontSize: fs, color: ink, lineHeight: 1,
         }}>
           {label}
         </span>
       </div>
-      {/* Corner labels */}
-      <span style={{ position:'absolute', top:4, left:6, fontSize:9, color:'rgba(255,255,255,0.8)', fontFamily:'Cinzel,serif', fontWeight:700 }}>
-        {label}
-      </span>
-      <span style={{ position:'absolute', bottom:4, right:6, fontSize:9, color:'rgba(255,255,255,0.8)', fontFamily:'Cinzel,serif', fontWeight:700, transform:'rotate(180deg)' }}>
-        {label}
-      </span>
+
+      {/* corner labels */}
+      <span style={{
+        position: 'absolute', top: Math.round(corner * 0.35), left: Math.round(corner * 0.5),
+        fontSize: corner, fontWeight: 800, fontFamily: 'Manrope, sans-serif', color: '#fff',
+        textShadow: '0 1px 2px rgba(0,0,0,0.4)',
+      }}>{label}</span>
+      <span style={{
+        position: 'absolute', bottom: Math.round(corner * 0.35), right: Math.round(corner * 0.5),
+        fontSize: corner, fontWeight: 800, fontFamily: 'Manrope, sans-serif', color: '#fff',
+        textShadow: '0 1px 2px rgba(0,0,0,0.4)', transform: 'rotate(180deg)',
+      }}>{label}</span>
     </motion.div>
   );
 }

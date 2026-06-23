@@ -191,11 +191,11 @@ export default function ChessBoardWrapper({ fen, phase, isMyTurn, yourColor, onS
     if (moves.length === 0) { shake(); return; }
 
     setSelectedSq(sq);
-    const highlights = { [sq]: { backgroundColor: 'rgba(124,106,247,0.4)' } };
+    const highlights = { [sq]: { backgroundColor: 'color-mix(in srgb, var(--accent) 42%, transparent)' } };
     moves.forEach(m => {
       highlights[m.to] = chess.get(m.to)
-        ? { boxShadow: 'inset 0 0 0 4px rgba(124,106,247,0.7)' }
-        : { background: 'radial-gradient(circle, rgba(124,106,247,0.55) 28%, transparent 30%)' };
+        ? { boxShadow: 'inset 0 0 0 4px color-mix(in srgb, var(--accent) 70%, transparent)' }
+        : { background: 'radial-gradient(circle, color-mix(in srgb, var(--accent) 55%, transparent) 28%, transparent 30%)' };
     });
     setLegalSquares(highlights);
   }
@@ -215,16 +215,16 @@ export default function ChessBoardWrapper({ fen, phase, isMyTurn, yourColor, onS
           borderRadius: 10,
           transition: 'box-shadow 0.3s ease',
           boxShadow: inCombo
-            ? '0 0 0 3px rgba(212,172,13,0.55)'
+            ? '0 0 0 3px rgba(216,180,94,0.6)'
             : isMyTurn
-              ? '0 0 0 3px rgba(124,106,247,0.45)'
-              : '0 0 0 1px #2a2a3f',
+              ? '0 0 0 3px var(--accent-glow)'
+              : '0 0 0 1px var(--border)',
         }}
         animate={isMyTurn && !inCombo ? {
           boxShadow: [
-            '0 0 0 3px rgba(124,106,247,0.5)',
-            '0 0 0 6px rgba(124,106,247,0.08)',
-            '0 0 0 3px rgba(124,106,247,0.5)',
+            '0 0 0 3px rgba(216,180,94,0.5)',
+            '0 0 0 6px rgba(216,180,94,0.08)',
+            '0 0 0 3px rgba(216,180,94,0.5)',
           ],
         } : {}}
         transition={{ repeat: Infinity, duration: 2 }}
@@ -239,8 +239,8 @@ export default function ChessBoardWrapper({ fen, phase, isMyTurn, yourColor, onS
               onPieceDrop: handlePieceDrop,
               onSquareClick: inCombo ? handleSquareClick : undefined,
               squareStyles: legalSquares,
-              darkSquareStyle:  { backgroundColor: '#b58863' },
-              lightSquareStyle: { backgroundColor: '#f0d9b5' },
+              darkSquareStyle:  { backgroundColor: 'var(--board-dark)' },
+              lightSquareStyle: { backgroundColor: 'var(--board-light)' },
               boardStyle: {
                 borderRadius: 8,
                 boxShadow: '0 4px 32px rgba(0,0,0,0.5)',
@@ -281,7 +281,7 @@ export default function ChessBoardWrapper({ fen, phase, isMyTurn, yourColor, onS
                     key={p}
                     style={styles.promoBtn}
                     onClick={() => handlePromotionPiece(p)}
-                    whileHover={{ background: 'var(--active)' }}
+                    whileHover={{ background: 'var(--accent)' }}
                     whileTap={{ scale: 0.93 }}
                   >
                     {glyph}
