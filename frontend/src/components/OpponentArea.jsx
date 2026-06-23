@@ -9,9 +9,9 @@ export default function OpponentArea({ opponentHandCount, opponentColor, isTheir
       <div style={styles.info}>
         <span style={{
           ...styles.tag,
-          background: opponentColor === 'White' ? '#ddd' : '#1a1a1a',
-          color:      opponentColor === 'White' ? '#111' : '#ccc',
-          border:     opponentColor === 'Black' ? '1px solid #444' : 'none',
+          background: opponentColor === 'White' ? '#f1ead9' : '#1a130c',
+          color:      opponentColor === 'White' ? '#241a12' : '#e6d9c2',
+          border:     opponentColor === 'Black' ? '1px solid rgba(255,255,255,0.2)' : 'none',
         }}>
           {opponentColor}
         </span>
@@ -76,8 +76,8 @@ const styles = {
   },
   theirTurn: {
     fontSize: 11,
-    color: '#7c6af7',
-    fontWeight: 500,
+    color: 'var(--accent)',
+    fontWeight: 600,
   },
   cardRow: {
     display: 'flex',
@@ -89,9 +89,9 @@ const styles = {
     width: 26,
     height: 38,
     borderRadius: 5,
-    background: 'linear-gradient(135deg, #1e1e2e 0%, #2a2a3f 100%)',
-    border: '1.5px solid var(--border)',
-    boxShadow: '1px 1px 4px rgba(0,0,0,0.5)',
+    background: 'var(--card-back)',
+    border: '1.5px solid var(--card-back-edge)',
+    boxShadow: '1px 1px 4px rgba(0,0,0,0.4)',
     position: 'relative',
     flexShrink: 0,
   },

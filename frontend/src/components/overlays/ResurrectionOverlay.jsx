@@ -126,7 +126,7 @@ export default function ResurrectionOverlay({ captured, allowedCount, yourColor,
 
         <div style={styles.actions}>
           <motion.button
-            style={{ ...styles.btn, background: 'var(--active)' }}
+            style={{ ...styles.btn, background: 'var(--accent)', color: 'var(--accent-ink)' }}
             onClick={confirm}
             whileTap={{ scale: 0.97 }}
           >
@@ -195,7 +195,7 @@ const styles = {
     cursor: 'pointer',
     transition: 'background 0.1s, border-color 0.1s',
   },
-  pieceGlyph: { fontSize: 20, color: '#e8e8f0' },
+  pieceGlyph: { fontSize: 20, color: 'var(--text)' },
   pieceCount: { fontSize: 12, color: 'var(--text-muted)' },
   squareHint: {
     fontSize: 12,

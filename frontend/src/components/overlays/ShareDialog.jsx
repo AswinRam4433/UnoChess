@@ -45,7 +45,7 @@ export default function ShareDialog({ gameID, onConfirm, onClose }) {
           style={styles.playBtn}
           onClick={onConfirm}
           whileTap={{ scale: 0.97 }}
-          whileHover={{ background: '#8e7ef9' }}
+          whileHover={{ filter: 'brightness(1.08)' }}
         >
           Open game → (waiting for opponent)
         </motion.button>
@@ -116,15 +116,15 @@ const styles = {
     flexShrink: 0,
   },
   playBtn: {
-    background: 'var(--active)',
-    color: '#fff',
+    background: 'var(--accent)',
+    color: 'var(--accent-ink)',
     border: 'none',
-    borderRadius: 8,
-    padding: '12px 0',
+    borderRadius: 10,
+    padding: '13px 0',
     fontSize: 14,
-    fontWeight: 600,
+    fontWeight: 700,
     width: '100%',
     cursor: 'pointer',
-    transition: 'background 0.15s',
+    minHeight: 44,
   },
 };

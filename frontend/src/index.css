@@ -1,37 +1,112 @@
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
 
+/* ============================================================
+   THEME TOKENS
+   Default (:root)        = Direction A — "Walnut & Felt"  (dark)
+   [data-theme="light"]   = Direction B — "Linen & Terracotta" (light)
+
+   Legacy variable names (--active, --surface, --surface-r) are
+   kept as aliases that point at the new palette so existing
+   components keep working with no churn.
+   ============================================================ */
 :root {
-  --bg:           #0d0d14;
-  --surface:      #16161f;
-  --surface-r:    #1e1e2e;
-  --border:       #2a2a3f;
-  --text:         #e8e8f0;
-  --text-muted:   #5a5a7a;
-  --uno-red:      #c0392b;
-  --uno-blue:     #2471a3;
-  --uno-green:    #1e8449;
-  --uno-yellow:   #d4ac0d;
-  --wild-grad:    linear-gradient(135deg, #c0392b 0%, #2471a3 33%, #1e8449 66%, #d4ac0d 100%);
-  --active:       #7c6af7;
-  --active-glow:  rgba(124, 106, 247, 0.35);
-  --board-light:  #f0d9b5;
-  --board-dark:   #b58863;
+  /* surfaces */
+  --bg:             #241a12;   /* walnut, behind everything */
+  --bar:            #2c2017;   /* top nav / panels */
+  --surface:        #2c2017;   /* legacy alias → panel */
+  --surface-r:      #34271b;   /* legacy alias → raised panel */
+  --panel:          rgba(255,255,255,0.06);
+  --felt:           radial-gradient(130% 120% at 50% -10%, #2c6149 0%, #1d4a36 55%, #163a29 100%);
+  --felt-solid:     #1d4a36;
+  --felt-inset:     rgba(0,0,0,0.20);
+  --border:         rgba(245,234,214,0.16);
+
+  /* text */
+  --text:           #f4ead6;
+  --text-muted:     #c2ad8c;
+
+  /* accent — brass. Legacy --active / --active-glow point here. */
+  --accent:         #d8b45e;
+  --accent-ink:     #241a12;
+  --accent-glow:    rgba(216,180,94,0.30);
+  --active:         #d8b45e;
+  --active-glow:    rgba(216,180,94,0.30);
+
+  /* UNO card colours — deepened so they read as card stock, not neon */
+  --uno-red:        #c23b2f;
+  --uno-blue:       #2a6e9e;
+  --uno-green:      #2c7a4d;
+  --uno-yellow:     #e3b23c;
+  --uno-yellow-ink: #a8761a;   /* number colour for yellow cards (contrast) */
+  --card-cream:     #f6eeda;
+  --wild-grad:      linear-gradient(140deg,#c23b2f,#2a6e9e 34%,#2c7a4d 66%,#e3b23c);
+
+  /* chess board */
+  --board-light:    #e9d3a8;
+  --board-dark:     #9a6b41;
+  --board-frame:    #46311f;
+
+  /* face-down card backs */
+  --card-back:      linear-gradient(140deg,#3a2818,#22160c);
+  --card-back-edge: #5a3f27;
+
+  color-scheme: dark;
+}
+
+[data-theme="light"] {
+  --bg:             #e4d8c0;
+  --bar:            #f4eddf;
+  --surface:        #f4eddf;
+  --surface-r:      #fbf6ec;
+  --panel:          rgba(58,46,34,0.05);
+  --felt:           radial-gradient(130% 120% at 50% -10%, #dbe3d2 0%, #c6d2b9 55%, #b6c4a6 100%);
+  --felt-solid:     #c6d2b9;
+  --felt-inset:     rgba(58,46,34,0.10);
+  --border:         rgba(58,46,34,0.18);
+
+  --text:           #3a2e22;
+  --text-muted:     #8a7a64;
+
+  --accent:         #c2683f;   /* terracotta */
+  --accent-ink:     #ffffff;
+  --accent-glow:    rgba(194,104,63,0.26);
+  --active:         #c2683f;
+  --active-glow:    rgba(194,104,63,0.26);
+
+  --uno-red:        #c23b2f;
+  --uno-blue:       #2a6e9e;
+  --uno-green:      #2c7a4d;
+  --uno-yellow:     #e3b23c;
+  --uno-yellow-ink: #a8761a;
+  --card-cream:     #f6eeda;
+  --wild-grad:      linear-gradient(140deg,#c23b2f,#2a6e9e 34%,#2c7a4d 66%,#e3b23c);
+
+  --board-light:    #efe2c4;
+  --board-dark:     #bd8a5e;
+  --board-frame:    #a87c4f;
+
+  --card-back:      linear-gradient(140deg,#caa978,#a9844f);
+  --card-back-edge: #8a6a40;
+
+  color-scheme: light;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 html, body, #root {
-  height: 100%;
+  min-height: 100%;
   background: var(--bg);
   color: var(--text);
-  font-family: 'Inter', sans-serif;
+  font-family: 'Manrope', sans-serif;
   font-size: 14px;
   -webkit-font-smoothing: antialiased;
-  overflow: hidden;
 }
 
+/* Smooth the theme swap */
+html { transition: background-color 0.25s ease; }
+
 button {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Manrope', sans-serif;
   cursor: pointer;
   border: none;
   outline: none;
@@ -43,13 +118,14 @@ input {
 }
 
 /* ── Scrollbar ─────────────────────────────── */
-::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-track { background: var(--bg); }
-::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
 
 /* ── Utility ───────────────────────────────── */
-.cinzel { font-family: 'Cinzel', serif; }
-.mono   { font-family: 'JetBrains Mono', monospace; }
+.cinzel  { font-family: 'Cinzel', serif; }
+.display { font-family: 'Cormorant Garamond', serif; }
+.mono    { font-family: 'JetBrains Mono', monospace; }
 
 /* ── Shake keyframe (illegal move) ─────────── */
 @keyframes shake {
@@ -63,7 +139,7 @@ input {
 
 /* ── Pulse keyframe (your-turn ring) ────────── */
 @keyframes pulse-ring {
-  0%   { box-shadow: 0 0 0 0 var(--active-glow); }
+  0%   { box-shadow: 0 0 0 0 var(--accent-glow); }
   70%  { box-shadow: 0 0 0 12px transparent; }
   100% { box-shadow: 0 0 0 0 transparent; }
 }

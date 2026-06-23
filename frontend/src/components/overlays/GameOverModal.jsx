@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 
 const CONFETTI_PIECES = Array.from({ length: 22 }, (_, i) => i);
-const CONFETTI_COLORS = ['#c0392b','#2471a3','#1e8449','#d4ac0d','#7c6af7','#e8e8f0'];
+const CONFETTI_COLORS = ['#c23b2f','#2a6e9e','#2c7a4d','#e3b23c','#d8b45e','#f4ead6'];
 const SYMBOLS = ['♟','♞','♝','♜','♛','♚'];
 
 function rng(seed) { return ((seed * 1664525 + 1013904223) & 0xffffffff) >>> 0; }
@@ -55,7 +55,7 @@ export default function GameOverModal({ gameOver, yourColor, onRematch, onLobby 
         </motion.div>
 
         <div style={styles.titleRow}>
-          <h1 style={{ ...styles.title, color: won ? '#7c6af7' : 'var(--text-muted)' }}>
+          <h1 style={{ ...styles.title, color: won ? 'var(--accent)' : 'var(--text-muted)' }}>
             {message}
           </h1>
         </div>
@@ -78,15 +78,15 @@ export default function GameOverModal({ gameOver, yourColor, onRematch, onLobby 
 
         <div style={styles.actions}>
           <motion.button
-            style={{ ...styles.btn, background: 'var(--active)' }}
+            style={{ ...styles.btn, background: 'var(--accent)', color: 'var(--accent-ink)' }}
             onClick={onRematch}
             whileTap={{ scale: 0.97 }}
-            whileHover={{ background: '#8e7ef9' }}
+            whileHover={{ filter: 'brightness(1.08)' }}
           >
             Play Again
           </motion.button>
           <motion.button
-            style={{ ...styles.btn, background: 'var(--surface)' }}
+            style={{ ...styles.btn, background: 'var(--panel)', color: 'var(--text)' }}
             onClick={onLobby}
             whileTap={{ scale: 0.97 }}
           >

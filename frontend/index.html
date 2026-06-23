@@ -5,6 +5,17 @@
     <link rel="icon" type="image/svg+xml" href="/logo.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>UN♟CHESS</title>
+    <script>
+      // Apply the saved theme before paint to avoid a flash.
+      // Default = dark ("Walnut & Felt"); "light" = "Linen & Terracotta".
+      (function () {
+        try {
+          if (localStorage.getItem('unochess-theme') === 'light') {
+            document.documentElement.setAttribute('data-theme', 'light');
+          }
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
