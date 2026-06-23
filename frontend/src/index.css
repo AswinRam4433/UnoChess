@@ -1,0 +1,69 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap');
+
+:root {
+  --bg:           #0d0d14;
+  --surface:      #16161f;
+  --surface-r:    #1e1e2e;
+  --border:       #2a2a3f;
+  --text:         #e8e8f0;
+  --text-muted:   #5a5a7a;
+  --uno-red:      #c0392b;
+  --uno-blue:     #2471a3;
+  --uno-green:    #1e8449;
+  --uno-yellow:   #d4ac0d;
+  --wild-grad:    linear-gradient(135deg, #c0392b 0%, #2471a3 33%, #1e8449 66%, #d4ac0d 100%);
+  --active:       #7c6af7;
+  --active-glow:  rgba(124, 106, 247, 0.35);
+  --board-light:  #f0d9b5;
+  --board-dark:   #b58863;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body, #root {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+button {
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  border: none;
+  outline: none;
+}
+
+input {
+  font-family: 'JetBrains Mono', monospace;
+  outline: none;
+}
+
+/* ── Scrollbar ─────────────────────────────── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* ── Utility ───────────────────────────────── */
+.cinzel { font-family: 'Cinzel', serif; }
+.mono   { font-family: 'JetBrains Mono', monospace; }
+
+/* ── Shake keyframe (illegal move) ─────────── */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%       { transform: translateX(-6px); }
+  40%       { transform: translateX(6px); }
+  60%       { transform: translateX(-4px); }
+  80%       { transform: translateX(4px); }
+}
+.shake { animation: shake 0.3s ease; }
+
+/* ── Pulse keyframe (your-turn ring) ────────── */
+@keyframes pulse-ring {
+  0%   { box-shadow: 0 0 0 0 var(--active-glow); }
+  70%  { box-shadow: 0 0 0 12px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
